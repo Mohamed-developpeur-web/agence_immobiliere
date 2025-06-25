@@ -4,7 +4,7 @@ publish_to: 'none'
 
 version: 1.0.0+1
 
-environment:
+environment:  
   sdk: ^3.8.0
 
 dependencies:
@@ -14,11 +14,11 @@ dependencies:
   firebase_auth: ^4.17.8
   cloud_firestore: ^4.15.8
   firebase_storage: ^11.7.2
-  image_picker: ^1.0.7
+  image_picker: ^1.1.0
   path: ^1.9.0
   flutter_image_compress: ^2.2.0
   universal_io: ^2.2.2
-
+  path_provider: ^2.1.2
 
 dev_dependencies:
   flutter_test:
