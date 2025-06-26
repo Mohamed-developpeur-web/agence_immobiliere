@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/app_footer.dart'; // ✅ Assure-toi que ce fichier existe
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -6,29 +7,99 @@ class DashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Tableau de bord')),
-      body: ListView(
-        padding: const EdgeInsets.all(16.0),
+      // 🧭 Entête de la page
+      appBar: AppBar(
+        title: const Text('Tableau de bord'),
+        centerTitle: true,
+        backgroundColor: Colors.blueGrey,
+      ),
+
+      // 📦 Corps structuré en colonne avec contenu et pied de page
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pushNamed(context, '/biens');
-            },
-            child: const Text('Voir la liste des biens'),
+          // 📱 Contenu principal avec grille de cartes
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: GridView.count(
+                crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 2,
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 16,
+                children: [
+                  _dashboardCard(
+                    icon: Icons.list_alt,
+                    label: 'Voir les biens',
+                    color: Colors.indigo,
+                    onTap: () => Navigator.pushNamed(context, '/biens'),
+                  ),
+                  _dashboardCard(
+                    icon: Icons.add_home,
+                    label: 'Ajouter un bien',
+                    color: Colors.teal,
+                    onTap: () => Navigator.pushNamed(context, '/addBien'),
+                  ),
+                  _dashboardCard(
+                    icon: Icons.person,
+                    label: 'Mon Profil',
+                    color: Colors.blue,
+                    onTap: () => Navigator.pushNamed(context, '/profile'),
+                  ),
+                ],
+              ),
+            ),
           ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pushNamed(context, '/addBien');
-            },
-            child: const Text('Ajouter un bien'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pushNamed(context, '/profile');
-            },
-            child: const Text('Mon Profil'),
-          ),
+
+          // 🦶 Pied de page commun à toute l’app
+          const AppFooter(),
         ],
+      ),
+    );
+  }
+
+  /// 🔹 Widget réutilisable pour les blocs du tableau de bord
+  Widget _dashboardCard({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 4,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            gradient: LinearGradient(
+              colors: [
+                color.withOpacity(0.8),
+                color.withOpacity(0.6),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 12),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 40, color: Colors.white),
+              const SizedBox(height: 12),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
