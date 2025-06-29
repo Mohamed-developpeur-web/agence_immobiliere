@@ -1,24 +1,32 @@
 name: agence_immobiliere
 description: "A new Flutter project."
-publish_to: 'none' 
+publish_to: 'none'
 
 version: 1.0.0+1
 
-environment:  
+environment:
   sdk: ^3.8.0
 
 dependencies:
+  # 🧱 Flutter SDK
   flutter:
     sdk: flutter
+
+  # 🧩 State Management
+  provider: ^6.1.1
+
+  # 🔥 Firebase Core & Services
   firebase_core: ^2.30.0
   firebase_auth: ^4.17.8
   cloud_firestore: ^4.15.8
   firebase_storage: ^11.7.2
+
+  # 📷 Image Manipulation
   image_picker: ^1.1.0
-  path: ^1.9.0
   flutter_image_compress: ^2.2.0
-  universal_io: ^2.2.2
+  path: ^1.9.0
   path_provider: ^2.1.2
+  universal_io: ^2.2.2
 
 dev_dependencies:
   flutter_test:
@@ -27,5 +35,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
   assets:
     - assets/logo.png

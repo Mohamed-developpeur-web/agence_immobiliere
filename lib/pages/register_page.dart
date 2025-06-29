@@ -65,7 +65,6 @@ class _RegisterPageState extends State<RegisterPage> {
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(vertical: 32),
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
                   children: [
                     const Text("Inscription", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 32),

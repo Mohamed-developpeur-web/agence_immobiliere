@@ -64,7 +64,6 @@ class _LoginPageState extends State<LoginPage> {
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(vertical: 32),
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
                   children: [
                     const Text("Connexion", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 32),

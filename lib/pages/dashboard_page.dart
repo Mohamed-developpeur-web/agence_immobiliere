@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../widgets/app_footer.dart'; // ✅ Assure-toi que ce fichier existe
+import '../widgets/app_footer.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -7,18 +7,14 @@ class DashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // 🧭 Entête de la page
       appBar: AppBar(
         title: const Text('Tableau de bord'),
         centerTitle: true,
         backgroundColor: Colors.blueGrey,
       ),
-
-      // 📦 Corps structuré en colonne avec contenu et pied de page
       body: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // 📱 Contenu principal avec grille de cartes
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -49,15 +45,12 @@ class DashboardPage extends StatelessWidget {
               ),
             ),
           ),
-
-          // 🦶 Pied de page commun à toute l’app
           const AppFooter(),
         ],
       ),
     );
   }
 
-  /// 🔹 Widget réutilisable pour les blocs du tableau de bord
   Widget _dashboardCard({
     required IconData icon,
     required String label,

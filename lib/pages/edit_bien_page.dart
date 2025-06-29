@@ -136,67 +136,83 @@ class _EditBienPageState extends State<EditBienPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Modifier un bien"),
-        centerTitle: true,
-        backgroundColor: Colors.blueGrey,
-      ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(vertical: 32),
+  return Scaffold(
+    appBar: AppBar(
+      title: const Text("Modifier un bien"),
+      centerTitle: true,
+      backgroundColor: Colors.blueGrey,
+    ),
+    body: LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: IntrinsicHeight(
               child: Column(
-                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  champ("Titre", titreController),
-                  const SizedBox(height: 16),
-                  champ("Description", descriptionController),
-                  const SizedBox(height: 16),
-                  champ("Ville", villeController),
-                  const SizedBox(height: 16),
-                  champ("Prix (FCFA)", prixController, type: TextInputType.number),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.photo_camera),
-                    label: const Text("Changer l'image"),
-                    onPressed: choisirImage,
-                  ),
-                  const SizedBox(height: 12),
-                  if (imagePreviewData != null)
-                    Image.memory(imagePreviewData!, height: 160, fit: BoxFit.cover)
-                  else if (imageUrlController.text.isNotEmpty)
-                    Image.network(imageUrlController.text, height: 160, fit: BoxFit.cover),
-                  const SizedBox(height: 16),
-                  champ("Image URL", imageUrlController),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text("Disponible ?"),
-                      Switch(
-                        value: disponible,
-                        onChanged: (val) => setState(() => disponible = val),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  isLoading
-                      ? const CircularProgressIndicator()
-                      : ElevatedButton.icon(
-                          icon: const Icon(Icons.save),
-                          label: const Text("Enregistrer"),
-                          onPressed: modifierBien,
+                  Expanded(
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 32),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            champ("Titre", titreController),
+                            const SizedBox(height: 16),
+                            champ("Description", descriptionController),
+                            const SizedBox(height: 16),
+                            champ("Ville", villeController),
+                            const SizedBox(height: 16),
+                            champ("Prix (FCFA)", prixController, type: TextInputType.number),
+                            const SizedBox(height: 16),
+                            ElevatedButton.icon(
+                              icon: const Icon(Icons.photo_camera),
+                              label: const Text("Changer l'image"),
+                              onPressed: choisirImage,
+                            ),
+                            const SizedBox(height: 12),
+                            if (imagePreviewData != null)
+                              Image.memory(imagePreviewData!, height: 160, fit: BoxFit.cover)
+                            else if (imageUrlController.text.isNotEmpty)
+                              Image.network(imageUrlController.text, height: 160, fit: BoxFit.cover),
+                            const SizedBox(height: 16),
+                            champ("Image URL", imageUrlController),
+                            const SizedBox(height: 16),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text("Disponible ?"),
+                                Switch(
+                                  value: disponible,
+                                  onChanged: (val) => setState(() => disponible = val),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 24),
+                            isLoading
+                                ? const CircularProgressIndicator()
+                                : ElevatedButton.icon(
+                                    icon: const Icon(Icons.save),
+                                    label: const Text("Enregistrer"),
+                                    onPressed: modifierBien,
+                                  ),
+                          ],
                         ),
+                      ),
+                    ),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 16),
+                    child: Center(child: AppFooter()),
+                  ),
                 ],
               ),
             ),
           ),
-          const AppFooter(),
-        ],
-      ),
-    );
-  }
+        );
+      },
+    ),
+  );
+}
 }

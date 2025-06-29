@@ -32,10 +32,7 @@ class MonApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Agence Immobilière',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      themeMode: ThemeMode.light,
+      theme: ThemeData(primarySwatch: Colors.blue),
       initialRoute: isLoggedIn ? '/dashboard' : '/',
       routes: {
         '/': (context) => const HomePage(),
@@ -47,34 +44,6 @@ class MonApp extends StatelessWidget {
         '/addBien': (context) => const AddBienPage(),
         '/editBien': (context) => const EditBienPage(),
         '/profile': (context) => const ProfilePage(),
-      },
-      onGenerateRoute: (settings) {
-        switch (settings.name) {
-          case '/home':
-            return MaterialPageRoute(builder: (context) => const HomePage());
-          case '/login':
-            return MaterialPageRoute(builder: (context) => const LoginPage());
-          case '/register':
-            return MaterialPageRoute(builder: (context) => const RegisterPage());
-          case '/dashboard':
-            return MaterialPageRoute(builder: (context) => const DashboardPage());
-          case '/biens':
-            return MaterialPageRoute(builder: (context) => const BiensListPage());
-          case '/bienDetails':
-            return MaterialPageRoute(builder: (context) => const BienDetailsPage());
-          case '/addBien':
-            return MaterialPageRoute(builder: (context) => const AddBienPage());
-          case '/editBien':
-            return MaterialPageRoute(builder: (context) => const EditBienPage());
-          case '/profile':
-            return MaterialPageRoute(builder: (context) => const ProfilePage());
-          default:
-            return MaterialPageRoute(
-              builder: (context) => const Scaffold(
-                body: Center(child: Text("Page non trouvée")),
-              ),
-            );
-        }
       },
     );
   }
