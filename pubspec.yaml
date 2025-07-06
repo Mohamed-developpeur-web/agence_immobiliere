@@ -8,20 +8,19 @@ environment:
   sdk: ^3.8.0
 
 dependencies:
-  # 🧱 Flutter SDK
   flutter:
     sdk: flutter
 
-  # 🧩 State Management
+  # 🧩 Gestion d’état
   provider: ^6.1.1
 
-  # 🔥 Firebase Core & Services
+  # 🔥 Firebase
   firebase_core: ^2.30.0
   firebase_auth: ^4.17.8
   cloud_firestore: ^4.15.8
   firebase_storage: ^11.7.2
 
-  # 📷 Image Manipulation
+  # 📷 Image : sélection, compression, chemins
   image_picker: ^1.1.0
   flutter_image_compress: ^2.2.0
   path: ^1.9.0

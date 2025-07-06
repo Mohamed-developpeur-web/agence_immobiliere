@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+
 import '../widgets/app_footer.dart';
+import '../providers/user_provider.dart';
+import '../constants/roles.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -14,6 +19,7 @@ class _LoginPageState extends State<LoginPage> {
   final passwordController = TextEditingController();
   String errorMessage = '';
   bool isLoading = false;
+  bool obscurePassword = true;
 
   Future<void> loginUser() async {
     setState(() {
@@ -22,30 +28,94 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
-      Navigator.pushReplacementNamed(context, '/dashboard');
+
+      final uid = credential.user!.uid;
+
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      await userProvider.fetchUser(uid);
+      final role = userProvider.role;
+
+      if (role == null) {
+        throw Exception("Aucun rôle défini pour cet utilisateur.");
+      }
+
+      switch (role) {
+        case Roles.admin:
+          Navigator.pushReplacementNamed(context, '/adminDashboard');
+          break;
+        case Roles.agent:
+          Navigator.pushReplacementNamed(context, '/agentDashboard');
+          break;
+        case Roles.client:
+          Navigator.pushReplacementNamed(context, '/clientDashboard');
+          break;
+        default:
+          throw Exception("Rôle inconnu : $role");
+      }
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found') {
+        errorMessage = "Aucun utilisateur trouvé avec cet e-mail.";
+      } else if (e.code == 'wrong-password') {
+        errorMessage = "Mot de passe incorrect.";
+      } else {
+        errorMessage = "Erreur Auth : ${e.message}";
+      }
     } catch (e) {
-      setState(() => errorMessage = e.toString());
+      errorMessage = "Erreur : ${e.toString().replaceAll('Exception: ', '')}";
     } finally {
       setState(() => isLoading = false);
     }
   }
 
-  Widget champSaisi(String label, TextEditingController controller, {bool obscure = false}) {
+  Future<void> resetPassword() async {
+    final email = emailController.text.trim();
+
+    if (email.isEmpty) {
+      setState(() => errorMessage = "Veuillez saisir votre e-mail pour réinitialiser.");
+      return;
+    }
+
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("✉️ Email de réinitialisation envoyé à $email")),
+        );
+      }
+    } catch (e) {
+      setState(() => errorMessage = "Erreur réinitialisation : ${e.toString()}");
+    }
+  }
+
+  Widget champSaisi(String label, TextEditingController controller, {bool isPassword = false}) {
     return SizedBox(
       width: 280,
       child: TextField(
         controller: controller,
-        obscureText: obscure,
+        obscureText: isPassword ? obscurePassword : false,
         decoration: InputDecoration(
           labelText: label,
           border: const OutlineInputBorder(),
+          suffixIcon: isPassword
+              ? IconButton(
+                  icon: Icon(obscurePassword ? Icons.visibility_off : Icons.visibility),
+                  onPressed: () => setState(() => obscurePassword = !obscurePassword),
+                )
+              : null,
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
   }
 
   @override
@@ -69,17 +139,28 @@ class _LoginPageState extends State<LoginPage> {
                     const SizedBox(height: 32),
                     champSaisi("Email", emailController),
                     const SizedBox(height: 16),
-                    champSaisi("Mot de passe", passwordController, obscure: true),
+                    champSaisi("Mot de passe", passwordController, isPassword: true),
+                    const SizedBox(height: 12),
+                    TextButton.icon(
+                      onPressed: resetPassword,
+                      icon: const Icon(Icons.lock_reset, size: 20),
+                      label: const Text("Mot de passe oublié ?"),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.blueGrey.shade700,
+                        textStyle: const TextStyle(fontStyle: FontStyle.italic),
+                      ),
+                    ),
                     const SizedBox(height: 24),
                     isLoading
                         ? const CircularProgressIndicator()
-                        : ElevatedButton(
+                        : ElevatedButton.icon(
                             onPressed: loginUser,
+                            icon: const Icon(Icons.login),
+                            label: const Text("Se connecter", style: TextStyle(fontSize: 16)),
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
-                            child: const Text("Se connecter", style: TextStyle(fontSize: 16)),
                           ),
                     if (errorMessage.isNotEmpty)
                       Padding(
@@ -96,7 +177,10 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
           ),
-          const AppFooter(),
+          const Padding(
+            padding: EdgeInsets.only(bottom: 12),
+            child: AppFooter(),
+          ),
         ],
       ),
     );

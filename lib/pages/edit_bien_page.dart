@@ -1,14 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
-import 'package:universal_io/io.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:path/path.dart' as p;
-import 'dart:typed_data';
-
-import '../widgets/app_footer.dart';
+import 'dart:io';
 
 class EditBienPage extends StatefulWidget {
   const EditBienPage({super.key});
@@ -18,201 +12,204 @@ class EditBienPage extends StatefulWidget {
 }
 
 class _EditBienPageState extends State<EditBienPage> {
-  final titreController = TextEditingController();
-  final descriptionController = TextEditingController();
-  final villeController = TextEditingController();
-  final prixController = TextEditingController();
-  final imageUrlController = TextEditingController();
+  late TextEditingController titreController;
+  late TextEditingController villeController;
+  late TextEditingController prixController;
+  late TextEditingController descriptionController;
+  late TextEditingController imageUrlController;
 
-  bool disponible = true;
-  bool isLoading = false;
-  String? bienId;
-  Uint8List? imagePreviewData;
+  late String bienId;
+  File? imageFile;
+  bool isUploading = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final id = ModalRoute.of(context)?.settings.arguments;
-    if (id != null && id is String) {
-      bienId = id;
-      FirebaseFirestore.instance.collection('biens').doc(id).get().then((doc) {
-        if (!doc.exists) return;
 
-        final data = doc.data()!;
-        titreController.text = data['titre'] ?? '';
-        descriptionController.text = data['description'] ?? '';
-        villeController.text = data['ville'] ?? '';
-        prixController.text = (data['prix'] ?? '').toString();
-        imageUrlController.text = data['imageUrl'] ?? '';
-        disponible = data['disponible'] ?? true;
-        setState(() {});
-      });
-    }
-  }
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
 
-  Future<void> choisirImage() async {
-    try {
-      final picker = ImagePicker();
-      final XFile? picked = await picker.pickImage(source: ImageSource.gallery);
-      if (picked == null) return;
-
-      final fileName = p.basename(picked.path);
-      final ref = FirebaseStorage.instance.ref('biens_images/$fileName');
-
-      if (kIsWeb) {
-        final bytes = await picked.readAsBytes();
-        final compressed = await FlutterImageCompress.compressWithList(
-          bytes,
-          minWidth: 600,
-          minHeight: 600,
-          quality: 60,
-        );
-        imagePreviewData = Uint8List.fromList(compressed);
-        await ref.putData(imagePreviewData!, SettableMetadata(contentType: 'image/jpeg'));
-      } else {
-        final file = File(picked.path);
-        final compressedFile = await FlutterImageCompress.compressAndGetFile(
-          file.path,
-          '${file.parent.path}/compressed_$fileName',
-          quality: 60,
-        );
-        imagePreviewData = await compressedFile!.readAsBytes();
-        await ref.putFile(File(compressedFile.path)); // ✅ Correction ici
-      }
-
-      final url = await ref.getDownloadURL();
-      setState(() => imageUrlController.text = url);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Erreur image : $e")),
-      );
-    }
-  }
-
-  Future<void> modifierBien() async {
-    if (bienId == null) return;
-
-    setState(() => isLoading = true);
-    try {
-      await FirebaseFirestore.instance.collection('biens').doc(bienId).update({
-        'titre': titreController.text.trim(),
-        'description': descriptionController.text.trim(),
-        'ville': villeController.text.trim(),
-        'prix': int.tryParse(prixController.text.trim()) ?? 0,
-        'imageUrl': imageUrlController.text.trim(),
-        'disponible': disponible,
-      });
-
-      if (!mounted) return;
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Bien modifié avec succès")),
-      );
-    } finally {
-      setState(() => isLoading = false);
-    }
-  }
-
-  Widget champ(String label, TextEditingController controller, {TextInputType type = TextInputType.text}) {
-    return SizedBox(
-      width: 280,
-      child: TextField(
-        controller: controller,
-        keyboardType: type,
-        decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
-      ),
-    );
+    bienId = args['id'];
+    titreController = TextEditingController(text: args['titre'] ?? '');
+    villeController = TextEditingController(text: args['ville'] ?? '');
+    prixController = TextEditingController(text: args['prix']?.toString() ?? '');
+    descriptionController = TextEditingController(text: args['description'] ?? '');
+    imageUrlController = TextEditingController(text: args['imageUrl'] ?? '');
   }
 
   @override
   void dispose() {
     titreController.dispose();
-    descriptionController.dispose();
     villeController.dispose();
     prixController.dispose();
+    descriptionController.dispose();
     imageUrlController.dispose();
     super.dispose();
   }
 
+  Future<void> pickImageAndUpload() async {
+    final picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    if (image == null) return;
+
+    setState(() {
+      isUploading = true;
+    });
+
+    try {
+      final ref = FirebaseStorage.instance
+          .ref()
+          .child('biens/${DateTime.now().millisecondsSinceEpoch}.jpg');
+
+      final uploadTask = await ref.putFile(File(image.path));
+      final url = await uploadTask.ref.getDownloadURL();
+
+      if (mounted) {
+        setState(() {
+          imageUrlController.text = url;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("✅ Image envoyée avec succès")),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("❌ Erreur lors de l’upload : ${e.toString()}")),
+      );
+    } finally {
+      setState(() {
+        isUploading = false;
+      });
+    }
+  }
+
+  Future<void> enregistrerModifications() async {
+    final titre = titreController.text.trim();
+    final ville = villeController.text.trim();
+    final prixText = prixController.text.trim();
+    final description = descriptionController.text.trim();
+    final imageUrl = imageUrlController.text.trim();
+
+    if (titre.isEmpty || ville.isEmpty || prixText.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("❌ Remplis tous les champs obligatoires.")),
+      );
+      return;
+    }
+
+    final prix = int.tryParse(prixText);
+    if (prix == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("❌ Prix invalide.")),
+      );
+      return;
+    }
+
+    try {
+      await FirebaseFirestore.instance.collection('biens').doc(bienId).update({
+        'titre': titre,
+        'ville': ville,
+        'prix': prix,
+        'description': description,
+        'imageUrl': imageUrl,
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("✅ Bien mis à jour avec succès")),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("❌ Erreur lors de la mise à jour : ${e.toString()}")),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-  return Scaffold(
-    appBar: AppBar(
-      title: const Text("Modifier un bien"),
-      centerTitle: true,
-      backgroundColor: Colors.blueGrey,
-    ),
-    body: LayoutBuilder(
-      builder: (context, constraints) {
-        return SingleChildScrollView(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: IntrinsicHeight(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 32),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            champ("Titre", titreController),
-                            const SizedBox(height: 16),
-                            champ("Description", descriptionController),
-                            const SizedBox(height: 16),
-                            champ("Ville", villeController),
-                            const SizedBox(height: 16),
-                            champ("Prix (FCFA)", prixController, type: TextInputType.number),
-                            const SizedBox(height: 16),
-                            ElevatedButton.icon(
-                              icon: const Icon(Icons.photo_camera),
-                              label: const Text("Changer l'image"),
-                              onPressed: choisirImage,
-                            ),
-                            const SizedBox(height: 12),
-                            if (imagePreviewData != null)
-                              Image.memory(imagePreviewData!, height: 160, fit: BoxFit.cover)
-                            else if (imageUrlController.text.isNotEmpty)
-                              Image.network(imageUrlController.text, height: 160, fit: BoxFit.cover),
-                            const SizedBox(height: 16),
-                            champ("Image URL", imageUrlController),
-                            const SizedBox(height: 16),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Text("Disponible ?"),
-                                Switch(
-                                  value: disponible,
-                                  onChanged: (val) => setState(() => disponible = val),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 24),
-                            isLoading
-                                ? const CircularProgressIndicator()
-                                : ElevatedButton.icon(
-                                    icon: const Icon(Icons.save),
-                                    label: const Text("Enregistrer"),
-                                    onPressed: modifierBien,
-                                  ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.only(bottom: 16),
-                    child: Center(child: AppFooter()),
-                  ),
-                ],
-              ),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Modifier le bien"),
+        backgroundColor: Colors.blueGrey,
+        centerTitle: true,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            TextField(
+              controller: titreController,
+              decoration: const InputDecoration(labelText: "Titre *"),
             ),
-          ),
-        );
-      },
-    ),
-  );
-}
+            const SizedBox(height: 12),
+            TextField(
+              controller: villeController,
+              decoration: const InputDecoration(labelText: "Ville *"),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: prixController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: "Prix (FCFA) *"),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: descriptionController,
+              maxLines: 3,
+              decoration: const InputDecoration(labelText: "Description"),
+            ),
+            const SizedBox(height: 12),
+
+            // 🔗 Champ URL image + bouton upload
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: imageUrlController,
+                    decoration: const InputDecoration(labelText: "URL de l'image"),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: isUploading ? null : pickImageAndUpload,
+                  icon: isUploading
+                      ? const CircularProgressIndicator()
+                      : const Icon(Icons.upload_file),
+                ),
+              ],
+            ),
+
+            // 🖼️ Prévisualisation
+            if (imageUrlController.text.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 16),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    imageUrlController.text,
+                    height: 200,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) =>
+                        const Text("❌ L'image ne peut pas être chargée"),
+                  ),
+                ),
+              ),
+
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: enregistrerModifications,
+              icon: const Icon(Icons.save),
+              label: const Text("Enregistrer"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blueGrey,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
 }
