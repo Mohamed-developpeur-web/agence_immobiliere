@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
 
+import '../widgets/app_footer.dart'; // ✅ Ajout du footer
+
 class EditBienPage extends StatefulWidget {
   const EditBienPage({super.key});
 
@@ -134,81 +136,97 @@ class _EditBienPageState extends State<EditBienPage> {
         backgroundColor: Colors.blueGrey,
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            TextField(
-              controller: titreController,
-              decoration: const InputDecoration(labelText: "Titre *"),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: villeController,
-              decoration: const InputDecoration(labelText: "Ville *"),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: prixController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: "Prix (FCFA) *"),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: descriptionController,
-              maxLines: 3,
-              decoration: const InputDecoration(labelText: "Description"),
-            ),
-            const SizedBox(height: 12),
+      body: Column(
+        children: [
+          // 🧱 Contenu centré et scrollable
+          Expanded(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: titreController,
+                      decoration: const InputDecoration(labelText: "Titre *"),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: villeController,
+                      decoration: const InputDecoration(labelText: "Ville *"),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: prixController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: "Prix (FCFA) *"),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: descriptionController,
+                      maxLines: 3,
+                      decoration: const InputDecoration(labelText: "Description"),
+                    ),
+                    const SizedBox(height: 12),
 
-            // 🔗 Champ URL image + bouton upload
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: imageUrlController,
-                    decoration: const InputDecoration(labelText: "URL de l'image"),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  onPressed: isUploading ? null : pickImageAndUpload,
-                  icon: isUploading
-                      ? const CircularProgressIndicator()
-                      : const Icon(Icons.upload_file),
-                ),
-              ],
-            ),
+                    // 🔗 Champ URL image + upload
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: imageUrlController,
+                            decoration:
+                                const InputDecoration(labelText: "URL de l'image"),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          onPressed: isUploading ? null : pickImageAndUpload,
+                          icon: isUploading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2))
+                              : const Icon(Icons.upload_file),
+                        ),
+                      ],
+                    ),
 
-            // 🖼️ Prévisualisation
-            if (imageUrlController.text.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 16),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    imageUrlController.text,
-                    height: 200,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) =>
-                        const Text("❌ L'image ne peut pas être chargée"),
-                  ),
+                    // 🖼️ Prévisualisation image si disponible
+                    if (imageUrlController.text.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            imageUrlController.text,
+                            height: 200,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) =>
+                                const Text("❌ L'image ne peut pas être chargée"),
+                          ),
+                        ),
+                      ),
+
+                    const SizedBox(height: 24),
+                    ElevatedButton.icon(
+                      onPressed: enregistrerModifications,
+                      icon: const Icon(Icons.save),
+                      label: const Text("Enregistrer"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blueGrey,
+                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      ),
+                    ),
+                  ],
                 ),
               ),
+            ),
+          ),
 
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: enregistrerModifications,
-              icon: const Icon(Icons.save),
-              label: const Text("Enregistrer"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueGrey,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              ),
-            )
-          ],
-        ),
+          // 📌 Ajout du footer aligné en bas
+          const AppFooter(),
+        ],
       ),
     );
   }
